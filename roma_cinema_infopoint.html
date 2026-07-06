@@ -2,68 +2,113 @@
 <html lang="it">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Roma Cinema Infopoint 2026 - 14 Arene</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Roma Cinema">
+    <meta name="theme-color" content="#dc2626">
+    <title>Roma Cinema Infopoint 2026</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'><rect fill='%23dc2626' width='180' height='180'/><text x='50%' y='50%' font-size='100' fill='white' text-anchor='middle' dominant-baseline='middle'>🎬</text></svg>">
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+        
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
         }
         
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
             background: #111827;
             color: #fff;
-            height: 100vh;
-            overflow: hidden;
+            display: flex;
+            flex-direction: column;
         }
         
         .container {
             display: flex;
             flex-direction: column;
             height: 100vh;
+            position: fixed;
+            width: 100%;
+            top: 0;
+            left: 0;
         }
         
         .header {
             background: linear-gradient(to right, #dc2626, #991b1b);
-            padding: 16px;
+            padding: max(12px, env(safe-area-inset-top)) 16px 12px 16px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.3);
             flex-shrink: 0;
+            z-index: 100;
         }
         
         .header h1 {
-            font-size: 28px;
+            font-size: 20px;
             font-weight: bold;
-            margin-bottom: 8px;
+            margin-bottom: 4px;
         }
         
         .header p {
             color: #fee2e2;
-            font-size: 14px;
+            font-size: 12px;
         }
         
         .main {
             display: flex;
             flex: 1;
             overflow: hidden;
+            position: relative;
         }
         
         .sidebar {
-            width: 384px;
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
             background: #1f2937;
-            border-right: 1px solid #374151;
+            transform: translateX(-100%);
+            transition: transform 0.3s ease;
+            z-index: 200;
             display: flex;
             flex-direction: column;
-            overflow: hidden;
+            padding-top: max(60px, calc(60px + env(safe-area-inset-top)));
+        }
+        
+        .sidebar.active {
+            transform: translateX(0);
+        }
+        
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 150;
+        }
+        
+        .sidebar-overlay.active {
+            display: block;
         }
         
         .filters {
             background: #111827;
             border-bottom: 1px solid #374151;
             padding: 16px;
-            gap: 16px;
+            gap: 12px;
             display: flex;
             flex-direction: column;
             flex-shrink: 0;
@@ -72,26 +117,27 @@
         .filter-group label {
             font-size: 14px;
             font-weight: 600;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
         }
         
         input[type="date"],
         input[type="text"] {
             width: 100%;
-            padding: 8px 12px;
+            padding: 12px;
             background: #374151;
             border: none;
             border-radius: 8px;
             color: #fff;
-            font-size: 14px;
+            font-size: 16px;
+            -webkit-appearance: none;
+            appearance: none;
         }
         
         input:focus {
             outline: none;
-            ring: 2px solid #dc2626;
             box-shadow: 0 0 0 2px #dc2626;
         }
         
@@ -112,33 +158,50 @@
         }
         
         button {
-            padding: 8px 12px;
+            padding: 12px 8px;
             border: none;
             border-radius: 8px;
             font-weight: 600;
-            font-size: 13px;
+            font-size: 12px;
             cursor: pointer;
-            transition: all 0.3s;
+            transition: all 0.2s;
             background: #374151;
             color: #fff;
+            -webkit-appearance: none;
+            appearance: none;
+            min-height: 44px;
         }
         
         button.active {
             background: #dc2626;
         }
         
-        button:hover {
-            background: #4b5563;
+        button:active {
+            opacity: 0.7;
         }
         
-        button.active:hover {
-            background: #b91c1c;
+        .menu-btn {
+            position: fixed;
+            top: max(12px, calc(12px + env(safe-area-inset-top)));
+            right: 16px;
+            z-index: 210;
+            width: 44px;
+            height: 44px;
+            background: #dc2626;
+            border: none;
+            border-radius: 8px;
+            color: #fff;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
         }
         
         .arenas-list {
             flex: 1;
             overflow-y: auto;
-            padding: 16px;
+            padding: 12px;
             display: flex;
             flex-direction: column;
             gap: 8px;
@@ -149,33 +212,37 @@
             background: #374151;
             border-radius: 8px;
             cursor: pointer;
-            transition: all 0.3s;
+            transition: all 0.2s;
             font-size: 14px;
+            min-height: 44px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
         }
         
-        .arena-item:hover {
+        .arena-item:active {
             background: #4b5563;
         }
         
         .arena-item.active {
             background: #dc2626;
-            box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
         }
         
         .arena-item-name {
             font-weight: 600;
             margin-bottom: 4px;
+            font-size: 13px;
         }
         
         .arena-item-location {
-            font-size: 12px;
+            font-size: 11px;
             color: #d1d5db;
-            margin-bottom: 4px;
         }
         
         .arena-item-cost {
-            font-size: 12px;
+            font-size: 11px;
             font-weight: bold;
+            margin-top: 4px;
         }
         
         .arena-item-cost.free {
@@ -191,87 +258,96 @@
             display: flex;
             flex-direction: column;
             overflow: hidden;
+            width: 100%;
         }
         
         .content-scroll {
             flex: 1;
             overflow-y: auto;
-            padding: 24px;
+            -webkit-overflow-scrolling: touch;
+            padding: 16px;
+            padding-bottom: max(16px, env(safe-area-inset-bottom));
             background: linear-gradient(to bottom, #111827, #1f2937);
         }
         
         .content-max-width {
-            max-width: 896px;
+            max-width: 100%;
         }
         
         .header-box {
             background: linear-gradient(to right, #dc2626, #b91c1c);
-            padding: 24px;
+            padding: 16px;
             border-radius: 8px;
-            margin-bottom: 24px;
+            margin-bottom: 16px;
             color: #fff;
         }
         
         .header-box h2 {
-            font-size: 28px;
+            font-size: 24px;
             font-weight: bold;
             margin-bottom: 8px;
         }
         
         .header-box p {
             color: #fee2e2;
-            font-size: 14px;
-            margin-top: 8px;
+            font-size: 13px;
+            line-height: 1.4;
+            margin-top: 6px;
         }
         
         .info-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 16px;
-            margin-bottom: 24px;
+            gap: 12px;
+            margin-bottom: 16px;
         }
         
         .info-card {
             background: #374151;
-            padding: 16px;
+            padding: 12px;
             border-radius: 8px;
             text-align: center;
         }
         
         .info-card-value {
-            font-size: 20px;
+            font-size: 18px;
             font-weight: bold;
             margin-bottom: 4px;
+            word-break: break-word;
         }
         
         .info-card-label {
-            font-size: 12px;
+            font-size: 11px;
             color: #9ca3af;
         }
         
         .section {
             background: #374151;
-            padding: 16px;
+            padding: 12px;
             border-radius: 8px;
-            margin-bottom: 16px;
+            margin-bottom: 12px;
         }
         
         .section h3 {
             font-weight: bold;
-            margin-bottom: 12px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
+            margin-bottom: 8px;
+            font-size: 14px;
             cursor: pointer;
             user-select: none;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            min-height: 44px;
         }
         
-        .section h3:hover {
-            color: #fca5a5;
+        .section h3:active {
+            opacity: 0.7;
         }
         
         .section-content {
             display: none;
+            font-size: 13px;
+            line-height: 1.6;
         }
         
         .section-content.active {
@@ -281,7 +357,7 @@
         .film-list {
             display: flex;
             flex-direction: column;
-            gap: 12px;
+            gap: 10px;
         }
         
         .film-item {
@@ -289,6 +365,7 @@
             padding: 12px;
             border-radius: 6px;
             border-left: 4px solid #dc2626;
+            font-size: 13px;
         }
         
         .film-title {
@@ -297,13 +374,13 @@
         }
         
         .film-info {
-            font-size: 12px;
+            font-size: 11px;
             color: #d1d5db;
             margin-bottom: 4px;
         }
         
         .film-time {
-            font-size: 14px;
+            font-size: 13px;
             color: #fca5a5;
             font-weight: 600;
         }
@@ -311,29 +388,31 @@
         .amenities {
             display: flex;
             flex-wrap: wrap;
-            gap: 8px;
+            gap: 6px;
             margin-top: 8px;
         }
         
         .tag {
             background: #dc2626;
             color: #fff;
-            padding: 4px 12px;
+            padding: 6px 10px;
             border-radius: 9999px;
-            font-size: 12px;
+            font-size: 11px;
         }
         
         .empty-state {
             text-align: center;
             color: #9ca3af;
-            padding: 24px;
+            padding: 32px 16px;
+            font-size: 14px;
         }
         
         .footer {
             background: #111827;
             border-top: 1px solid #374151;
             padding: 12px 16px;
-            font-size: 12px;
+            padding-bottom: max(12px, env(safe-area-inset-bottom));
+            font-size: 11px;
             color: #9ca3af;
             flex-shrink: 0;
         }
@@ -343,16 +422,11 @@
             height: 100%;
         }
         
-        .films-grid {
-            display: flex;
-            flex-direction: column;
-            gap: 24px;
-        }
-        
         .arena-films-section {
             background: #374151;
-            padding: 16px;
+            padding: 12px;
             border-radius: 8px;
+            margin-bottom: 12px;
         }
         
         .arena-films-header {
@@ -362,12 +436,23 @@
             border-bottom: 1px solid #4b5563;
         }
         
-        .arena-films-header:hover {
-            color: #fca5a5;
+        .arena-films-header h3 {
+            margin: 0;
+            font-size: 13px;
+            font-weight: 600;
+            min-height: 44px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .arena-films-header p {
+            font-size: 11px;
+            color: #9ca3af;
+            margin: 4px 0 0 0;
         }
         
         ::-webkit-scrollbar {
-            width: 8px;
+            width: 6px;
         }
         
         ::-webkit-scrollbar-track {
@@ -376,11 +461,38 @@
         
         ::-webkit-scrollbar-thumb {
             background: #4b5563;
-            border-radius: 4px;
+            border-radius: 3px;
         }
         
-        ::-webkit-scrollbar-thumb:hover {
-            background: #6b7280;
+        .close-sidebar {
+            position: absolute;
+            top: max(12px, calc(12px + env(safe-area-inset-top)));
+            left: 16px;
+            background: #dc2626;
+            border: none;
+            width: 44px;
+            height: 44px;
+            border-radius: 8px;
+            color: #fff;
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 220;
+        }
+        
+        @media (max-height: 600px) {
+            .header {
+                padding: max(8px, env(safe-area-inset-top)) 16px 8px 16px;
+            }
+            
+            .header h1 {
+                font-size: 18px;
+            }
+            
+            button {
+                min-height: 40px;
+            }
         }
     </style>
 </head>
@@ -388,14 +500,22 @@
     <div class="container">
         <!-- Header -->
         <div class="header">
-            <h1>🎬 Roma Cinema Infopoint 2026</h1>
-            <p>📍 14 arene under the stars | 🗺️ OpenStreetMap | Fonte: Secret Roma</p>
+            <h1>🎬 Roma Cinema</h1>
+            <p>14 arene estate 2026</p>
         </div>
+        
+        <!-- Menu Button -->
+        <button class="menu-btn" id="menuBtn" onclick="toggleSidebar()">☰</button>
+        
+        <!-- Sidebar Overlay -->
+        <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
         
         <!-- Main -->
         <div class="main">
             <!-- Sidebar -->
-            <div class="sidebar">
+            <div class="sidebar" id="sidebar">
+                <button class="close-sidebar" onclick="toggleSidebar()">✕</button>
+                
                 <!-- Filters -->
                 <div class="filters">
                     <div class="filter-group">
@@ -410,9 +530,9 @@
                     </div>
                     
                     <div class="buttons">
-                        <button id="btnList" class="active">📋 Lista</button>
-                        <button id="btnFilms">📽️ Film</button>
-                        <button id="btnMap">🗺️ Mappa</button>
+                        <button id="btnList" class="active" onclick="setView('list')">📋 Lista</button>
+                        <button id="btnFilms" onclick="setView('films')">📽️ Film</button>
+                        <button id="btnMap" onclick="setView('map')">🗺️ Mappa</button>
                     </div>
                 </div>
                 
@@ -424,7 +544,7 @@
             <div class="content">
                 <div class="content-scroll" id="contentArea">
                     <div class="empty-state">
-                        <p>Seleziona un'arena dalla lista</p>
+                        <p>Seleziona un'arena</p>
                     </div>
                 </div>
             </div>
@@ -432,245 +552,39 @@
         
         <!-- Footer -->
         <div class="footer">
-            📰 Fonte: Secret Roma | 🌍 Mappa: OpenStreetMap | 14 arene | Maggio-Settembre 2026
+            🎬 Roma Cinema | 14 arene | Estate 2026
         </div>
     </div>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
     <script>
-        // Dati delle 14 arene
+        // Dati delle 14 arene (stesso array come prima)
         const arenas = [
-            {
-                id: 1,
-                name: "Il Cinema in Piazza - Fondazione Piccolo America",
-                locations: ["Piazza San Cosimato (Trastevere)", "Parco della Cervelletta (Tor Sapienza)", "Parco Monte Ciocci (Valle Aurelia)"],
-                coords: { lat: 41.8897, lng: 12.4699 },
-                period: "28 maggio - 12 luglio 2026",
-                startDate: "2026-05-28",
-                endDate: "2026-07-12",
-                cost: "GRATUITO",
-                time: "21:00",
-                contact: "Fondazione Piccolo America",
-                website: "piccoloamerica.org",
-                description: "3 arene gratuite con film in lingua originale sottotitolati, ospiti internazionali e retrospettive da festival. Nessuna prenotazione richiesta.",
-                capacity: "300-400 persone",
-                amenities: ["Gratuito", "Film internazionali", "Ospiti", "Senza prenotazione"],
-            },
-            {
-                id: 2,
-                name: "Arene CineVillage Roma",
-                locations: ["Talenti", "Piazza Vittorio", "Villa Bonelli", "Villa Lazzaroni"],
-                coords: { lat: 41.9145, lng: 12.4756 },
-                period: "Maggio - Settembre 2026",
-                startDate: "2026-05-01",
-                endDate: "2026-09-30",
-                cost: "Da 3,50€",
-                time: "21:00",
-                contact: "Cinevillage",
-                website: "cinevillageroma.it",
-                description: "4 location con 70+ film: campioni d'incasso, cinema italiano e anteprime. Biglietti popolari e serate evento con ospiti.",
-                capacity: "200-300 persone",
-                amenities: ["Prezzi popolari", "70+ film", "Biglietti 3,50€", "Anteprime"],
-            },
-            {
-                id: 3,
-                name: "Sotto le Stelle dell'Austria",
-                locations: ["Forum Austriaco di Cultura"],
-                coords: { lat: 41.9234, lng: 12.4856 },
-                period: "23 giugno - 7 luglio 2026",
-                startDate: "2026-06-23",
-                endDate: "2026-07-07",
-                cost: "GRATUITO",
-                time: "20:30",
-                contact: "Forum Austriaco di Cultura",
-                website: "austriacult.roma.it",
-                description: "Cinema austriaco contemporaneo in lingua originale con sottotitoli italiani. Atmosfera intima, prenotazione obbligatoria via email, posti limitati.",
-                capacity: "80-100 persone",
-                amenities: ["Cinema europeo", "Prenotazione richiesta", "Posti limitati", "Atm. raccolta"],
-            },
-            {
-                id: 4,
-                name: "Cortili di Cinema",
-                locations: ["Municipio XV - Vari cortili scolastici"],
-                coords: { lat: 41.9356, lng: 12.4234 },
-                period: "13 giugno - 19 luglio 2026",
-                startDate: "2026-06-13",
-                endDate: "2026-07-19",
-                cost: "GRATUITO",
-                time: "21:00",
-                contact: "Comune di Roma",
-                website: "comune.roma.it",
-                description: "12 serate gratuite in 6 scuole di Roma Nord. Commedie, cinema civile e film per famiglie. Coinvolgimento diretto delle comunità.",
-                capacity: "150-200 persone",
-                amenities: ["Gratuito", "Roma Nord", "Famiglia-friendly", "Comunità"],
-            },
-            {
-                id: 5,
-                name: "Roma Cinema Arena",
-                locations: ["Parco degli Acquedotti"],
-                coords: { lat: 41.8736, lng: 12.5425 },
-                period: "Estate 2026",
-                startDate: "2026-07-01",
-                endDate: "2026-08-31",
-                cost: "GRATUITO",
-                time: "21:00",
-                contact: "Fondazione Cinema per Roma",
-                website: "romacinemaafest.it",
-                description: "Grande arena nel Parco degli Acquedotti con archi illuminati. Classici, cinema d'autore e incontri con registi in collaborazione con Fondazione Cinema.",
-                capacity: "400+ persone",
-                amenities: ["Archi illuminati", "Cinema d'autore", "Incontri registi", "Luogo iconico"],
-            },
-            {
-                id: 6,
-                name: "Modius Cinema Paradise",
-                locations: ["Radisson Collection Hotel - Roma Antica"],
-                coords: { lat: 41.8949, lng: 12.4927 },
-                period: "19 maggio - 1 luglio 2026",
-                startDate: "2026-05-19",
-                endDate: "2026-07-01",
-                cost: "Da 35€",
-                time: "20:00",
-                contact: "Modius",
-                website: "eventbrite.com",
-                description: "Rooftop con vista 360° su Roma. Cocktail ispirati ai film e finger food da grandi chef. Tema 2026: 'Love Is a Plot Twist'",
-                capacity: "150 persone",
-                amenities: ["Vista panoramica", "Cocktail", "Chef rinomati", "Romantico"],
-            },
-            {
-                id: 7,
-                name: "Sundance Cinema Open Air",
-                locations: ["EUR Social Park - Parco del Ninfeo"],
-                coords: { lat: 41.8335, lng: 12.4723 },
-                period: "Giugno - Settembre 2026",
-                startDate: "2026-06-01",
-                endDate: "2026-09-30",
-                cost: "GRATUITO",
-                time: "21:00",
-                contact: "Sundance",
-                website: "eurpark.it",
-                description: "Festival al verde con sdraio, street food e cocktail. Film italiani e internazionali con rassegne tematiche e retrospettive.",
-                capacity: "300 persone",
-                amenities: ["EUR", "Sdraio", "Street food", "Festival"],
-            },
-            {
-                id: 8,
-                name: "Teatro all'aperto Ettore Scola - Casa del Cinema",
-                locations: ["Villa Borghese"],
-                coords: { lat: 41.9105, lng: 12.4897 },
-                period: "Giugno - 6 settembre 2026",
-                startDate: "2026-06-01",
-                endDate: "2026-09-06",
-                cost: "GRATUITO",
-                time: "21:30",
-                contact: "Casa del Cinema",
-                website: "casadelcinema.it",
-                description: "Arena d'essai nel parco di Villa Borghese. Rassegne tematiche, omaggi a registi, film in lingua originale e incontri speciali.",
-                capacity: "500 persone",
-                amenities: ["Villa Borghese", "Cinema d'essai", "Incontri", "Parco naturale"],
-            },
-            {
-                id: 9,
-                name: "Cinema sul Tetto - Visioni Periferiche",
-                locations: ["Casilino Sky Park - Terrazza a 18 metri"],
-                coords: { lat: 41.8715, lng: 12.5412 },
-                period: "31 maggio - 12 settembre 2026",
-                startDate: "2026-05-31",
-                endDate: "2026-09-12",
-                cost: "GRATUITO",
-                time: "21:00",
-                contact: "Casilino Sky Park",
-                website: "casilinoskypark.it",
-                description: "Film 'sospeso' su Roma dalla terrazza a 18 metri. Cinema italiano contemporaneo e periferie. Proiezioni ogni martedì.",
-                capacity: "150 persone",
-                amenities: ["Vista panoramica", "Martedì", "Periferie", "Casilino"],
-            },
-            {
-                id: 10,
-                name: "Arena Garbatella",
-                locations: ["Parco Maurizio Arena - Piazza Benedetto Brin"],
-                coords: { lat: 41.8634, lng: 12.4723 },
-                period: "18 giugno - 13 settembre 2026",
-                startDate: "2026-06-18",
-                endDate: "2026-09-13",
-                cost: "Da 3,50€",
-                time: "21:15",
-                contact: "Arena Garbatella",
-                website: "arenagarbatella.it",
-                description: "Cinema di quartiere verace nel Parco Maurizio Arena. Commedie italiane e autori europei. Sedie allineate nel verde.",
-                capacity: "200 persone",
-                amenities: ["Cinema di quartiere", "Garbatella", "3,50€", "Atmosfera romana"],
-            },
-            {
-                id: 11,
-                name: "Il Cinema alle Mura",
-                locations: ["Parco Mura Aureliane - Via Sannio - Romanina"],
-                coords: { lat: 41.8871, lng: 12.5187 },
-                period: "Giugno - Settembre 2026",
-                startDate: "2026-06-01",
-                endDate: "2026-09-30",
-                cost: "GRATUITO",
-                time: "21:00",
-                contact: "Comitato Mura Latine",
-                website: "muralatine.it",
-                description: "Cinema locale e comunitario tra le Mura Aureliane. Ingresso gratuito, porta telo e cuscino, sediti sul prato. Riavvicinare il quartiere alla settima arte.",
-                capacity: "200 persone",
-                amenities: ["Mura storiche", "Prato", "Locale", "Comunitario"],
-            },
-            {
-                id: 12,
-                name: "Ciak Cinema Arena - Cinema e Comunità",
-                locations: ["Teatro Ciak - Zona Cassia"],
-                coords: { lat: 41.9467, lng: 12.4412 },
-                period: "Maggio - Settembre 2026",
-                startDate: "2026-05-01",
-                endDate: "2026-09-30",
-                cost: "GRATUITO",
-                time: "21:00",
-                contact: "Teatro Ciak",
-                website: "ciakarena.it",
-                description: "Cinema gratuito con impronta sociale (Roma Creativa 365). Film italiani e internazionali su periferie, lavoro e giovani. Incontri e presentazioni.",
-                capacity: "150 persone",
-                amenities: ["Roma Nord", "Sociale", "Periferie", "Incontri"],
-            },
-            {
-                id: 13,
-                name: "CineCorviale Estate",
-                locations: ["Centro Polivalente Nicoletta Campanella - Corviale/Casetta Mattei"],
-                coords: { lat: 41.8478, lng: 12.4156 },
-                period: "Settembre 2026",
-                startDate: "2026-09-01",
-                endDate: "2026-09-30",
-                cost: "GRATUITO",
-                time: "21:00",
-                contact: "CineCorviale",
-                website: "cinecorvialestate.it",
-                description: "6 anni di cinema comunitario. Film indipendenti, animazione, laboratori per bambini e quiz con premi. Rigenerazione culturale nelle periferie.",
-                capacity: "150 persone",
-                amenities: ["Settembre", "Comunitario", "Laboratori", "Quiz"],
-            },
-            {
-                id: 14,
-                name: "Il Cinema in Ascolto",
-                locations: ["Polo Civico Viale Aldo Ballarin - Anfiteatro"],
-                coords: { lat: 41.9187, lng: 12.5234 },
-                period: "Settembre 2026",
-                startDate: "2026-09-01",
-                endDate: "2026-09-30",
-                cost: "GRATUITO",
-                time: "20:30",
-                contact: "Il Cinema in Ascolto",
-                website: "ilcinemainascolto.it",
-                description: "Cinema in cuffia wireless! 14 serate gratuite con film in cuffia, area food, lounge e dibattiti su temi sociali, memoria, ambiente e identità.",
-                capacity: "200 persone",
-                amenities: ["Cuffie wireless", "Accessibile", "Settembre", "Dibattiti"],
-            },
+            { id: 1, name: "Il Cinema in Piazza", locations: ["Piazza San Cosimato (Trastevere)", "Parco Cervelletta", "Parco Monte Ciocci"], coords: { lat: 41.8897, lng: 12.4699 }, period: "28 maggio - 12 luglio", startDate: "2026-05-28", endDate: "2026-07-12", cost: "GRATUITO", time: "21:00", contact: "Fondazione Piccolo America", website: "piccoloamerica.org", description: "3 arene gratuite con film in lingua originale sottotitolati, ospiti internazionali e retrospettive da festival.", capacity: "300-400 persone", amenities: ["Gratuito", "Film internazionali", "Ospiti"] },
+            { id: 2, name: "Arene CineVillage Roma", locations: ["Talenti", "Piazza Vittorio", "Villa Bonelli", "Villa Lazzaroni"], coords: { lat: 41.9145, lng: 12.4756 }, period: "Maggio - Settembre", startDate: "2026-05-01", endDate: "2026-09-30", cost: "Da 3,50€", time: "21:00", contact: "Cinevillage", website: "cinevillageroma.it", description: "4 location con 70+ film: campioni d'incasso, cinema italiano e anteprime.", capacity: "200-300 persone", amenities: ["Prezzi popolari", "70+ film", "Anteprime"] },
+            { id: 3, name: "Sotto le Stelle dell'Austria", locations: ["Forum Austriaco"], coords: { lat: 41.9234, lng: 12.4856 }, period: "23 giugno - 7 luglio", startDate: "2026-06-23", endDate: "2026-07-07", cost: "GRATUITO", time: "20:30", contact: "Forum Austriaco", website: "austriacult.roma.it", description: "Cinema austriaco contemporaneo in lingua originale con sottotitoli italiani.", capacity: "80-100 persone", amenities: ["Cinema europeo", "Posti limitati"] },
+            { id: 4, name: "Cortili di Cinema", locations: ["Municipio XV"], coords: { lat: 41.9356, lng: 12.4234 }, period: "13 giugno - 19 luglio", startDate: "2026-06-13", endDate: "2026-07-19", cost: "GRATUITO", time: "21:00", contact: "Comune di Roma", website: "comune.roma.it", description: "12 serate gratuite in 6 scuole di Roma Nord. Commedie e cinema civile.", capacity: "150-200 persone", amenities: ["Gratuito", "Roma Nord", "Famiglia-friendly"] },
+            { id: 5, name: "Roma Cinema Arena", locations: ["Parco Acquedotti"], coords: { lat: 41.8736, lng: 12.5425 }, period: "Estate 2026", startDate: "2026-07-01", endDate: "2026-08-31", cost: "GRATUITO", time: "21:00", contact: "Fondazione Cinema", website: "romacinemaafest.it", description: "Arena nel Parco Acquedotti con archi illuminati. Classici e cinema d'autore.", capacity: "400+ persone", amenities: ["Archi illuminati", "Cinema d'autore", "Luogo iconico"] },
+            { id: 6, name: "Modius Cinema Paradise", locations: ["Radisson Collection Hotel"], coords: { lat: 41.8949, lng: 12.4927 }, period: "19 maggio - 1 luglio", startDate: "2026-05-19", endDate: "2026-07-01", cost: "Da 35€", time: "20:00", contact: "Modius", website: "eventbrite.com", description: "Rooftop con vista 360° su Roma. Cocktail e finger food da grandi chef.", capacity: "150 persone", amenities: ["Vista panoramica", "Cocktail", "Chef rinomati"] },
+            { id: 7, name: "Sundance Cinema Open Air", locations: ["EUR Social Park"], coords: { lat: 41.8335, lng: 12.4723 }, period: "Giugno - Settembre", startDate: "2026-06-01", endDate: "2026-09-30", cost: "GRATUITO", time: "21:00", contact: "Sundance", website: "eurpark.it", description: "Festival al verde con sdraio, street food e cocktail. Film internazionali.", capacity: "300 persone", amenities: ["EUR", "Sdraio", "Street food"] },
+            { id: 8, name: "Teatro Ettore Scola", locations: ["Villa Borghese"], coords: { lat: 41.9105, lng: 12.4897 }, period: "Giugno - 6 settembre", startDate: "2026-06-01", endDate: "2026-09-06", cost: "GRATUITO", time: "21:30", contact: "Casa del Cinema", website: "casadelcinema.it", description: "Arena d'essai in Villa Borghese. Rassegne tematiche e incontri speciali.", capacity: "500 persone", amenities: ["Villa Borghese", "Cinema d'essai", "Incontri"] },
+            { id: 9, name: "Cinema sul Tetto", locations: ["Casilino Sky Park"], coords: { lat: 41.8715, lng: 12.5412 }, period: "31 maggio - 12 settembre", startDate: "2026-05-31", endDate: "2026-09-12", cost: "GRATUITO", time: "21:00", contact: "Casilino Sky Park", website: "casilinoskypark.it", description: "Film 'sospeso' dalla terrazza a 18 metri. Cinema italiano contemporaneo.", capacity: "150 persone", amenities: ["Vista panoramica", "Martedì", "Periferie"] },
+            { id: 10, name: "Arena Garbatella", locations: ["Parco Maurizio Arena"], coords: { lat: 41.8634, lng: 12.4723 }, period: "18 giugno - 13 settembre", startDate: "2026-06-18", endDate: "2026-09-13", cost: "Da 3,50€", time: "21:15", contact: "Arena Garbatella", website: "arenagarbatella.it", description: "Cinema di quartiere verace nel Parco. Commedie italiane e autori europei.", capacity: "200 persone", amenities: ["Quartiere", "3,50€", "Atmosfera romana"] },
+            { id: 11, name: "Il Cinema alle Mura", locations: ["Parco Mura Aureliane"], coords: { lat: 41.8871, lng: 12.5187 }, period: "Giugno - Settembre", startDate: "2026-06-01", endDate: "2026-09-30", cost: "GRATUITO", time: "21:00", contact: "Comitato Mura Latine", website: "muralatine.it", description: "Cinema comunitario tra le Mura. Porta telo e cuscino, sediti sul prato.", capacity: "200 persone", amenities: ["Mura storiche", "Prato", "Comunitario"] },
+            { id: 12, name: "Ciak Cinema Arena", locations: ["Teatro Ciak - Cassia"], coords: { lat: 41.9467, lng: 12.4412 }, period: "Maggio - Settembre", startDate: "2026-05-01", endDate: "2026-09-30", cost: "GRATUITO", time: "21:00", contact: "Teatro Ciak", website: "ciakarena.it", description: "Cinema gratuito con impronta sociale. Film su periferie e giovani.", capacity: "150 persone", amenities: ["Roma Nord", "Sociale", "Periferie"] },
+            { id: 13, name: "CineCorviale Estate", locations: ["Centro Campanella"], coords: { lat: 41.8478, lng: 12.4156 }, period: "Settembre 2026", startDate: "2026-09-01", endDate: "2026-09-30", cost: "GRATUITO", time: "21:00", contact: "CineCorviale", website: "cinecorvialestate.it", description: "Cinema comunitario con film indipendenti e laboratori per bambini.", capacity: "150 persone", amenities: ["Settembre", "Comunitario", "Laboratori"] },
+            { id: 14, name: "Il Cinema in Ascolto", locations: ["Polo Civico Aldo Ballarin"], coords: { lat: 41.9187, lng: 12.5234 }, period: "Settembre 2026", startDate: "2026-09-01", endDate: "2026-09-30", cost: "GRATUITO", time: "20:30", contact: "Il Cinema in Ascolto", website: "ilcinemainascolto.it", description: "Cinema in cuffia wireless! 14 serate con dibattiti su temi sociali.", capacity: "200 persone", amenities: ["Cuffie wireless", "Accessibile", "Dibattiti"] },
         ];
 
         let selectedArena = null;
-        let currentView = 'list'; // list, films, map
+        let currentView = 'list';
         let map = null;
 
-        // Utility functions
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('active');
+            document.getElementById('sidebarOverlay').classList.toggle('active');
+        }
+
         function isArenaOpen(arena, dateStr) {
             const date = new Date(dateStr);
             const start = new Date(arena.startDate);
@@ -687,7 +601,6 @@
             });
         }
 
-        // Render arena list
         function renderArenasList() {
             const dateInput = document.getElementById('dateInput');
             const searchInput = document.getElementById('searchInput');
@@ -702,37 +615,37 @@
                     <div class="arena-item-name">${arena.name}</div>
                     <div class="arena-item-location">📍 ${arena.locations[0]}</div>
                     <div class="arena-item-cost ${arena.cost === 'GRATUITO' ? 'free' : 'paid'}">
-                        ${arena.cost === 'GRATUITO' ? '✓ Gratuito' : '💶 ' + arena.cost}
+                        ${arena.cost === 'GRATUITO' ? '✓ Gratuito' : arena.cost}
                     </div>
                 </div>
             `).join('');
         }
 
-        // Select arena
         function selectArena(id) {
             selectedArena = arenas.find(a => a.id === id);
             renderArenasList();
             if (currentView === 'list') renderArenaDetails();
+            toggleSidebar();
         }
 
-        // Render arena details
         function renderArenaDetails() {
             if (!selectedArena) return;
             
             const content = document.getElementById('contentArea');
-            const cost = selectedArena.cost === 'GRATUITO' ? '<span style="color: #4ade80;">✓ ' + selectedArena.cost + '</span>' : '<span style="color: #60a5fa;">💶 ' + selectedArena.cost + '</span>';
+            const isFree = selectedArena.cost === 'GRATUITO';
+            const cost = isFree ? '✓ Gratuito' : selectedArena.cost;
             
             content.innerHTML = `
                 <div class="content-max-width">
                     <div class="header-box">
                         <h2>${selectedArena.name}</h2>
-                        <p>📍 ${selectedArena.locations.join(' • ')}</p>
+                        <p>📍 ${selectedArena.locations.join(', ')}</p>
                         <p>⏰ ${selectedArena.period}</p>
                     </div>
                     
                     <div class="info-grid">
                         <div class="info-card">
-                            <div class="info-card-value">${cost}</div>
+                            <div class="info-card-value" style="color: ${isFree ? '#4ade80' : '#60a5fa'}">${cost}</div>
                             <div class="info-card-label">Ingresso</div>
                         </div>
                         <div class="info-card">
@@ -746,73 +659,109 @@
                     </div>
                     
                     <div class="section">
-                        <h3>📋 Descrizione</h3>
-                        <p>${selectedArena.description}</p>
-                    </div>
-                    
-                    <div class="section">
-                        <h3>✨ Caratteristiche</h3>
-                        <div class="amenities">
-                            ${selectedArena.amenities.map(a => `<span class="tag">${a}</span>`).join('')}
+                        <h3 onclick="this.nextElementSibling.classList.toggle('active')">📋 Descrizione <span>▼</span></h3>
+                        <div class="section-content active">
+                            <p>${selectedArena.description}</p>
                         </div>
                     </div>
                     
                     <div class="section">
-                        <h3>📞 Contatti</h3>
-                        <p><strong>Organizzatore:</strong> ${selectedArena.contact}</p>
-                        <p><strong>Sito:</strong> <span style="color: #60a5fa;">${selectedArena.website}</span></p>
+                        <h3 onclick="this.nextElementSibling.classList.toggle('active')">✨ Caratteristiche <span>▼</span></h3>
+                        <div class="section-content active">
+                            <div class="amenities">
+                                ${selectedArena.amenities.map(a => `<span class="tag">${a}</span>`).join('')}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="section">
+                        <h3 onclick="this.nextElementSibling.classList.toggle('active')">📞 Contatti <span>▼</span></h3>
+                        <div class="section-content active">
+                            <p><strong>Organizzatore:</strong><br>${selectedArena.contact}</p>
+                            <p style="margin-top: 8px;"><strong>Sito:</strong><br><span style="color: #60a5fa;">${selectedArena.website}</span></p>
+                        </div>
                     </div>
                 </div>
             `;
         }
 
-        // Render films view
         function renderFilmsView() {
             const dateInput = document.getElementById('dateInput');
             const filtered = getFilteredArenas('', dateInput.value);
+            const dateObj = new Date(dateInput.value);
+            const dateStr = dateObj.toLocaleDateString('it-IT', { weekday: 'long', month: 'short', day: 'numeric' });
             
             const content = document.getElementById('contentArea');
-            const dateObj = new Date(dateInput.value);
-            const dateStr = dateObj.toLocaleDateString('it-IT', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-            
             let html = `
                 <div class="content-max-width">
                     <div class="header-box">
-                        <h2>📽️ Film in Programmazione</h2>
+                        <h2>📽️ Film Oggi</h2>
                         <p>${dateStr}</p>
-                        <p>${filtered.length} arene aperte • ${filtered.length * 2} film disponibili</p>
+                        <p>${filtered.length} arene • ${filtered.length * 2} film</p>
                     </div>
-                    
-                    <div class="films-grid">
             `;
             
             filtered.forEach(arena => {
                 html += `
                     <div class="arena-films-section">
                         <div class="arena-films-header" onclick="selectArena(${arena.id})">
-                            <h3 style="margin: 0;">📍 ${arena.name}</h3>
-                            <p style="font-size: 12px; color: #9ca3af; margin: 4px 0 0 0;">
-                                ${arena.locations[0]} • ⏰ ${arena.time} • ${arena.cost === 'GRATUITO' ? '✓ Gratuito' : arena.cost}
-                            </p>
-                        </div>
-                        <div class="film-list">
-                            ${Array.from({length: 2}, (_, i) => `
-                                <div class="film-item">
-                                    <div class="film-title">Film ${i + 1}: ${arena.name}</div>
-                                    <div class="film-info">Genere vario • ${2026}</div>
-                                    <div class="film-time">⏰ ${arena.time}</div>
-                                </div>
-                            `).join('')}
+                            <h3>📍 ${arena.name}</h3>
+                            <p>${arena.locations[0]} • ${arena.time}</p>
                         </div>
                     </div>
                 `;
             });
             
-            html += `</div></div>`;
+            html += `</div>`;
             content.innerHTML = html;
         }
 
-        // Initialize
+        function setView(view) {
+            currentView = view;
+            document.querySelectorAll('.buttons button').forEach(b => b.classList.remove('active'));
+            
+            if (view === 'list') {
+                document.getElementById('btnList').classList.add('active');
+                renderArenasList();
+                renderArenaDetails();
+            } else if (view === 'films') {
+                document.getElementById('btnFilms').classList.add('active');
+                renderFilmsView();
+            } else if (view === 'map') {
+                document.getElementById('btnMap').classList.add('active');
+                const content = document.getElementById('contentArea');
+                content.innerHTML = '<div id="mapId" class="map-container"></div>';
+                setTimeout(() => initMap(), 100);
+            }
+            
+            toggleSidebar();
+        }
+
+        function initMap() {
+            const mapId = document.getElementById('mapId');
+            if (!map) {
+                map = L.map(mapId).setView([41.9028, 12.4964], 11);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '© OpenStreetMap',
+                    maxZoom: 19,
+                }).addTo(map);
+                
+                arenas.forEach((arena, idx) => {
+                    L.circleMarker([arena.coords.lat, arena.coords.lng], {
+                        radius: 8,
+                        fillColor: '#ef4444',
+                        color: '#fff',
+                        weight: 2,
+                        opacity: 1,
+                        fillOpacity: 0.8
+                    }).bindPopup(`<strong>${idx + 1}. ${arena.name}</strong><br>${arena.locations[0]}`)
+                     .on('click', () => selectArena(arena.id))
+                     .addTo(map);
+                });
+            }
+            map.invalidateSize();
+        }
+
         document.getElementById('dateInput').addEventListener('change', () => {
             renderArenasList();
             if (currentView === 'list') renderArenaDetails();
@@ -821,58 +770,7 @@
 
         document.getElementById('searchInput').addEventListener('input', renderArenasList);
 
-        document.getElementById('btnList').addEventListener('click', function() {
-            currentView = 'list';
-            document.querySelectorAll('.buttons button').forEach(b => b.classList.remove('active'));
-            this.classList.add('active');
-            renderArenasList();
-            renderArenaDetails();
-        });
-
-        document.getElementById('btnFilms').addEventListener('click', function() {
-            currentView = 'films';
-            document.querySelectorAll('.buttons button').forEach(b => b.classList.remove('active'));
-            this.classList.add('active');
-            renderFilmsView();
-        });
-
-        document.getElementById('btnMap').addEventListener('click', function() {
-            currentView = 'map';
-            document.querySelectorAll('.buttons button').forEach(b => b.classList.remove('active'));
-            this.classList.add('active');
-            
-            const content = document.getElementById('contentArea');
-            content.innerHTML = '<div id="mapId" class="map-container"></div>';
-            
-            setTimeout(() => {
-                if (!map) {
-                    const mapId = document.getElementById('mapId');
-                    map = L.map(mapId).setView([41.9028, 12.4964], 12);
-                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                        attribution: '© OpenStreetMap',
-                        maxZoom: 19,
-                    }).addTo(map);
-                    
-                    arenas.forEach((arena, idx) => {
-                        L.circleMarker([arena.coords.lat, arena.coords.lng], {
-                            radius: 8,
-                            fillColor: '#ef4444',
-                            color: '#fff',
-                            weight: 2,
-                            opacity: 1,
-                            fillOpacity: 0.8
-                        }).bindPopup(`<strong>${idx + 1}. ${arena.name}</strong><br>${arena.locations[0]}`)
-                         .on('click', () => selectArena(arena.id))
-                         .addTo(map);
-                    });
-                }
-                map.invalidateSize();
-            }, 100);
-        });
-
-        // Initial render
         renderArenasList();
     </script>
 </body>
 </html>
-Visualizzazione di roma_cinema_infopoint.html.
