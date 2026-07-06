@@ -1,0 +1,2 @@
+# cinema
+infopoint cinema
